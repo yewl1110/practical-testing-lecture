@@ -20,6 +20,7 @@
 - 콘솔 출력은 검증이 아님 → 항상 성공처럼 보임
 
 </details>
+
 <details>
 <summary><strong>강의 7. JUnit5로 테스트하기</strong></summary>
 
@@ -38,4 +39,46 @@
     }
 ```
 
+</details>
+
+<details>
+<summary><strong>강의 8. 테스트 케이스 세분화하기</strong></summary>
+
+- 요구사항
+  - 질문하기: 암묵적이거나 드러나지 않는 요구사항이 있는가?
+- 테스트 케이스 세분화하기
+  - 해피 케이스
+  - 예외 케이스
+  
+  **→ 경계값 테스트가 중요 (범위, 구간, 날짜 등)**
+  - ex) 3 이상의 값을 받는 API
+    - 경계값 테스트:3
+    - 예외 테스트:2
+
+### 정상 케이스 테스트
+```java
+    @Test
+    void addSeveralBeverages() {
+        CafeKiosk cafeKiosk = new CafeKiosk();
+        Americano americano = new Americano();
+
+        cafeKiosk.add(americano, 2);
+
+        assertThat(cafeKiosk.getBeverages().get(0)).isEqualTo(americano);
+        assertThat(cafeKiosk.getBeverages().get(1)).isEqualTo(americano);
+    }
+```
+### 예외 케이스 테스트
+```java
+    @Test
+    void addZeroBeverages() {
+        CafeKiosk cafeKiosk = new CafeKiosk();
+        Americano americano = new Americano();
+
+        assertThatThrownBy(() -> cafeKiosk.add(americano, 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("음료는 1잔 이상 주문하실 수 있습니다.")
+        ;
+    }
+```
 </details>
