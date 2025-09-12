@@ -20,3 +20,22 @@
 - 콘솔 출력은 검증이 아님 → 항상 성공처럼 보임
 
 </details>
+<details>
+<summary><strong>강의 7. JUnit5로 테스트하기</strong></summary>
+
+- 단위테스트
+  - 작은 코드 단위를 독립적으로 검증
+  - 클래스 or 메서드 단위
+  - JUnit5 에 AssertJ 얹어서 씀
+
+```java
+    @Test
+    void getName() {
+        Americano americano = new Americano();
+
+        assertEquals("아메리카노", americano.getName()); //JUnit5
+        assertThat(americano.getName()).isEqualTo("아메리카노"); // AssertJ
+    }
+```
+
+</details>
