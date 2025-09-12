@@ -82,3 +82,94 @@
     }
 ```
 </details>
+
+<details>
+<summary><strong>강의 9. 테스트하기 어려운 영역을 분리하기</strong></summary>
+
+- 테스트가 어려운 부분을 외부로 분리할수록 테스트 가능한 코드는 많아진다
+- 테스트하기 어려운 영역
+  - 관측할 때마다 다른 값에 의존하는 코드
+    - 현재 시간, 랜던 값, 사용자 입력
+  - 외부 세계에 영향을 주는 코드
+    - 출력, 메시지 전송, DB에 기록
+  - 함수를 기준으로 input, output 에 의존
+- 테스트 하기 좋은 코드
+  - 순수함수
+    - 같은 입력에는 항상 같은 결과
+    - 외부 세상과 단절 된 형태
+
+---
+### ❌ 문제 코드 (시간에 직접 의존)
+```java
+public class CafeKiosk {
+
+    private static final LocalTime SHOP_OPEN_TIME = LocalTime.of(10, 0);
+    private static final LocalTime SHOP_CLOSE_TIME = LocalTime.of(22, 0);
+    
+    public Order createOrder() {
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        LocalTime currentTime = currentDateTime.toLocalTime();
+        if (currentTime.isBefore(SHOP_OPEN_TIME) || currentTime.isAfter(SHOP_CLOSE_TIME)) {
+            throw new IllegalArgumentException("주문 시간이 아닙니다.");
+        }
+
+        return new Order(LocalDateTime.now(), beverages);
+    }
+}
+```
+```java
+    @Test
+    void createOrder() {
+        CafeKiosk cafeKiosk = new CafeKiosk();
+        Americano americano = new Americano();
+
+        cafeKiosk.add(americano);
+
+        Order order = cafeKiosk.createOrder();
+        assertThat(order.getBeverages()).hasSize(1);
+        assertThat(order.getBeverages().get(0).getName()).isEqualTo("아메리카노");
+    }
+```
+### 문제점
+- LocalDateTime.now() → 실행 시각에 따라 테스트가 깨질 수 있다
+### 해결 방안
+- createOrder() 의 currentDateTime을 현재 시각이 아닌 파라미터로 입력받도록 수정
+### ✅ 개선 코드 (시간을 파라미터로 주입)
+```java
+    public Order createOrder(LocalDateTime currentDateTime) {
+        LocalTime currentTime = currentDateTime.toLocalTime();
+        if (currentTime.isBefore(SHOP_OPEN_TIME) || currentTime.isAfter(SHOP_CLOSE_TIME)) {
+            throw new IllegalArgumentException("주문 시간이 아닙니다.");
+        }
+
+        return new Order(LocalDateTime.now(), beverages);
+    }
+```
+```java
+    @Test
+    void createOrderWithCurrentTime() {
+        CafeKiosk cafeKiosk = new CafeKiosk();
+        Americano americano = new Americano();
+
+        cafeKiosk.add(americano);
+
+        Order order = cafeKiosk.createOrder(LocalDateTime.of(2025, 1, 17, 22, 0));
+
+        assertThat(order.getBeverages()).hasSize(1);
+        assertThat(order.getBeverages().get(0).getName()).isEqualTo("아메리카노");
+    }
+
+    @Test
+    void createOrderWithOutsideOpenTime() {
+        CafeKiosk cafeKiosk = new CafeKiosk();
+        Americano americano = new Americano();
+
+        cafeKiosk.add(americano);
+
+        assertThatThrownBy(() -> cafeKiosk.createOrder(LocalDateTime.of(2025, 1, 17, 9, 59)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("주문 시간이 아닙니다.")
+        ;
+    }
+```
+</details>
