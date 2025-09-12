@@ -1,7 +1,7 @@
 # Practical Testing: 실용적인 테스트 가이드
 
 ## 섹션 3. 단위 테스트
- 
+
 <details>
 <summary><strong>강의 6. 수동테스트</strong></summary>
 
@@ -15,7 +15,9 @@
         System.out.println(">>> 담긴 음료 : " + cafeKiosk.getBeverages().get(0).getName());
     }
 ```
+
 ### 문제점
+
 - 무엇을 검증하는건지 알 수 없음
 - 콘솔 출력은 검증이 아님 → 항상 성공처럼 보임
 
@@ -45,17 +47,21 @@
 <summary><strong>강의 8. 테스트 케이스 세분화하기</strong></summary>
 
 - 요구사항
+
   - 질문하기: 암묵적이거나 드러나지 않는 요구사항이 있는가?
 - 테스트 케이스 세분화하기
+
   - 해피 케이스
   - 예외 케이스
-  
+
   **→ 경계값 테스트가 중요 (범위, 구간, 날짜 등)**
+
   - ex) 3 이상의 값을 받는 API
     - 경계값 테스트:3
     - 예외 테스트:2
 
-### 정상 케이스 테스트
+### ✅정상 케이스 테스트
+
 ```java
     @Test
     void addSeveralBeverages() {
@@ -68,7 +74,9 @@
         assertThat(cafeKiosk.getBeverages().get(1)).isEqualTo(americano);
     }
 ```
-### 예외 케이스 테스트
+
+### ✅예외 케이스 테스트
+
 ```java
     @Test
     void addZeroBeverages() {
@@ -81,6 +89,7 @@
         ;
     }
 ```
+
 </details>
 
 <details>
@@ -99,13 +108,15 @@
     - 외부 세상과 단절 된 형태
 
 ---
-### ❌ 문제 코드 (시간에 직접 의존)
+
+### ❌문제 코드 (시간에 직접 의존)
+
 ```java
 public class CafeKiosk {
 
     private static final LocalTime SHOP_OPEN_TIME = LocalTime.of(10, 0);
     private static final LocalTime SHOP_CLOSE_TIME = LocalTime.of(22, 0);
-    
+  
     public Order createOrder() {
         LocalDateTime currentDateTime = LocalDateTime.now();
         LocalTime currentTime = currentDateTime.toLocalTime();
@@ -117,6 +128,7 @@ public class CafeKiosk {
     }
 }
 ```
+
 ```java
     @Test
     void createOrder() {
@@ -130,11 +142,17 @@ public class CafeKiosk {
         assertThat(order.getBeverages().get(0).getName()).isEqualTo("아메리카노");
     }
 ```
+
 ### 문제점
+
 - LocalDateTime.now() → 실행 시각에 따라 테스트가 깨질 수 있다
+
 ### 해결 방안
+
 - createOrder() 의 currentDateTime을 현재 시각이 아닌 파라미터로 입력받도록 수정
-### ✅ 개선 코드 (시간을 파라미터로 주입)
+
+### ✅개선 코드 (시간을 파라미터로 주입)
+
 ```java
     public Order createOrder(LocalDateTime currentDateTime) {
         LocalTime currentTime = currentDateTime.toLocalTime();
@@ -145,6 +163,7 @@ public class CafeKiosk {
         return new Order(LocalDateTime.now(), beverages);
     }
 ```
+
 ```java
     @Test
     void createOrderWithCurrentTime() {
@@ -172,36 +191,39 @@ public class CafeKiosk {
         ;
     }
 ```
+
 </details>
 
 ## 섹션 4. TDD: Test Driven Development
+
 <details>
 <summary><strong>강의 11. TDD</strong></summary>
 
 - 프로덕션 코드보다 테스트 코드를 먼저 작성
 - RED -> GREEN -> REFACTOR
 - RED (실패 테스트 작성) -> GREEN (테스트 통과하는 최소한의 코딩) -> REFACTOR (구현 코드 개선, 테스트 통과 유지)
-
-
 - 선 기능 구현의 단점
+
   - 테스트 누락 가능성
   - 특정 테스트 케이스만 검증할 가능성
   - 잘못된 구현을 늦게 발견할 수 있음
 - TDD 장점
+
   - 복잡도가 낮은 코드
   - 엣지 케이스를 쉽게 발견
   - 구현에 대한 빠른 피드백
   - 과감한 리팩토링 가능
-
-
 - 키워드
+
   - 애자일 방법론
   - 익스트림 프로그래밍
   - 스크럼
   - 칸반
+
 </details>
 
 ## 섹션 5. 테스트는 문서다
+
 <details>
 <summary><strong>강의 14. DisplayName을 섬세하게</strong></summary>
 
@@ -218,4 +240,16 @@ public class CafeKiosk {
     - ❌ 특정 시간 이전에 주문을 생성하면 실패한다.
     - ✅ 영업 시간 이전에는 주문을 생성할 수 없다.
 
+</details>
+
+<details>
+<summary><strong>강의 15. BDD</strong></summary>
+
+- Behavior Driven Development
+- TDD에서 파생
+- 시나리오에 기반한 테스트케이스 자체에 집중하여 테스트
+- 개발자가 아닌 사람이 봐도 이해할 수 있을 정도의 추상화 수준
+- Given: 시나리오 진행에 필요한 준비 과정
+- When: 시나리오 행동 진행
+- Then: 시나리오 진행에 대한 결과 검증
 </details>
