@@ -173,3 +173,30 @@ public class CafeKiosk {
     }
 ```
 </details>
+
+## 섹션 4. TDD: Test Driven Development
+<details>
+<summary><strong>강의 11. TDD</strong></summary>
+
+- 프로덕션 코드보다 테스트 코드를 먼저 작성
+- RED -> GREEN -> REFACTOR
+- RED (실패 테스트 작성) -> GREEN (테스트 통과하는 최소한의 코딩) -> REFACTOR (구현 코드 개선, 테스트 통과 유지)
+
+
+- 선 기능 구현의 단점
+  - 테스트 누락 가능성
+  - 특정 테스트 케이스만 검증할 가능성
+  - 잘못된 구현을 늦게 발견할 수 있음
+- TDD 장점
+  - 복잡도가 낮은 코드
+  - 엣지 케이스를 쉽게 발견
+  - 구현에 대한 빠른 피드백
+  - 과감한 리팩토링 가능
+
+
+- 키워드
+  - 애자일 방법론
+  - 익스트림 프로그래밍
+  - 스크럼
+  - 칸반
+</details>
