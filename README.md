@@ -5,6 +5,7 @@
 <details>
 <summary><strong>강의 6. 수동테스트</strong></summary>
 
+### ❌문제 코드
 ```java
     @Test
     void add() {
@@ -31,6 +32,7 @@
   - 클래스 or 메서드 단위
   - JUnit5 에 AssertJ 얹어서 씀
 
+### ✅테스트 라이브러리를 사용한 코드
 ```java
     @Test
     void getName() {
@@ -246,12 +248,12 @@ public class CafeKiosk {
 <summary><strong>강의 15. BDD</strong></summary>
 
 - Behavior Driven Development
-- TDD에서 파생
-- 시나리오에 기반한 테스트케이스 자체에 집중하여 테스트
-- 개발자가 아닌 사람이 봐도 이해할 수 있을 정도의 추상화 수준
-- Given: 시나리오 진행에 필요한 준비 과정
-- When: 시나리오 행동 진행
-- Then: 시나리오 진행에 대한 결과 검증
+  - TDD에서 파생
+  - 시나리오에 기반한 테스트케이스 자체에 집중하여 테스트
+  - 개발자가 아닌 사람이 봐도 이해할 수 있을 정도의 추상화 수준
+  - Given: 시나리오 진행에 필요한 준비 과정
+  - When: 시나리오 행동 진행
+  - Then: 시나리오 진행에 대한 결과 검증
 
 </details>
 
@@ -278,6 +280,9 @@ public class CafeKiosk {
 
 - JPA에서의 repository의 쿼리 메서드는 테스트를 통해 쿼리 생성이 의도대로 되는지 확인 필요
 - `@DataJpaTest` 는 JPA에 필요한 빈만 올려서 테스트 (`@SpringBootTest` 에 비해 속도 빠름)
+
+---
+### ✅ Persistence Layer 통합 테스트 코드
 ```java
 @ActiveProfiles("test")
 @DataJpaTest
