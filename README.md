@@ -268,3 +268,42 @@ public class CafeKiosk {
   - 큰 기능 단위를 검증하는 통합 테스트
 
 </details>
+
+<details>
+<summary><strong>강의 20. Persistence Layer 테스트</strong></summary>
+
+- Persistence Layer
+  - DataAccess의 역할
+  - 비즈니스 로직이 포함되면 안됨
+
+- JPA에서의 repository의 쿼리 메서드는 테스트를 통해 쿼리 생성이 의도대로 되는지 확인 필요
+- `@DataJpaTest` 는 JPA에 필요한 빈만 올려서 테스트 (`@SpringBootTest` 에 비해 속도 빠름)
+```java
+@ActiveProfiles("test")
+@DataJpaTest
+class ProductRepositoryTest {
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @DisplayName("원하는 판매상태를 가진 상품들을 조회한다.")
+    @Test
+    void findAllBySellingStatusIn() {
+        // given
+        // product1, product2, product3 생성
+        productRepository.saveAll(List.of(product1, product2, product3));
+
+        // when
+        List<Product> products = productRepository.findAllBySellingStatusIn(List.of(SELLING, HOLD));
+
+        // then
+        assertThat(products).hasSize(2)
+                .extracting("productNumber", "name", "sellingStatus")
+                .containsExactlyInAnyOrder(
+                        tuple("001", "아메리카노", SELLING),
+                        tuple("002", "카페라떼", HOLD)
+                );
+    }
+}
+```
+</details>
