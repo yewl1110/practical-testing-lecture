@@ -312,3 +312,117 @@ class ProductRepositoryTest {
 }
 ```
 </details>
+
+<details>
+<summary><strong>강의 23. Business Layer 테스트</strong></summary>
+
+- Business Layer
+  - 비즈니스 로직을 구현하는 역할
+  - Persistence Layer와의 상호작용을 통해 비즈니스 로직 전개
+  - 트랜잭션 보장해야 함
+
+---
+### ✅ Business Layer 통합 테스트 코드
+```java
+@SpringBootTest
+@ActiveProfiles("test")
+class OrderServiceTest {
+    
+    @AfterEach
+    void tearDown() {
+        orderProductRepository.deleteAllInBatch();
+        orderRepository.deleteAllInBatch();
+        productRepository.deleteAllInBatch();
+    }
+
+    @DisplayName("주문번호 리스트를 받아 주문을 생성한다.")
+    @Test
+    void createOrder() {
+        // given
+        // product1, product2, product3 생성
+        productRepository.saveAll(List.of(product1, product2, product3));
+
+        // when
+        // 생성된 productNumbers로 product를 가져옴 
+
+        // then
+        // 데이터 검증
+    }
+
+    @DisplayName("중복되는 상품번호 리스트로 주문을 생성할 수 있다.")
+    @Test
+    void createOrderWithDuplicateProductNumbers() {
+        // given
+        // product1, product2, product3 생성
+        productRepository.saveAll(List.of(product1, product2, product3));
+
+        OrderCreateRequest request = OrderCreateRequest.builder()
+                .productNumbers(List.of("001", "001"))
+                .build();
+
+        // when
+        // 생성된 productNumbers로 product를 가져옴 
+
+        // then
+        // 데이터 검증
+    }
+}
+```
+### @AfterEach
+- `@SpringBootTest` 환경에서는 테스트 메서드 간 **데이터가 공유**되는 문제가 발생할 수 있음  
+- 단일 메서드 실행 시에는 통과하지만, **클래스 전체 실행 시에는 데이터 누적으로 실패**할 수 있음  
+- 해결 방법:
+  - `@AfterEach`에서 매번 데이터를 초기화  
+  - `@Transactional`을 사용하여 **테스트 종료 시 자동 롤백**되도록 설정
+---
+## ⚠️ @Transactional 사용시 주의할 점
+### 테스트 클래스에서만 @Transactional을 사용하는 경우
+**문제 상황**  
+- `OrderService`에는 `@Transactional`이 선언되어 있지 않음에도,  
+  테스트 클래스에 `@Transactional`이 붙어 있으면 테스트 실행 시 트랜잭션이 활성화된다.  
+- 이 때문에 실제 서비스 코드가 트랜잭션 없이도 정상 동작하는 것처럼 보일 수 있다.  
+- 즉, **실제 환경과 다른 조건에서 테스트가 통과**하면서 잘못된 확신을 줄 위험이 있다.
+
+**왜 위험한가?**  
+- 서비스 로직에서 `dirty checking`(JPA 변경 감지) 같은 기능은 **트랜잭션이 반드시 있어야 작동**한다.  
+- 테스트에서는 `@Transactional` 덕분에 업데이트가 적용되지만,  
+  운영 환경에서 트랜잭션이 없다면 동일한 코드가 동작하지 않는다.
+
+**권장 방법**  
+- 테스트 클래스에만 `@Transactional`을 추가하는 대신,  
+  **실제 서비스 코드(`Service` 계층)** 에 트랜잭션을 선언하는 것이 안전하다.  
+- 테스트에서는 트랜잭션이 필요하면 `@Transactional`을 추가하되,  
+  이는 **테스트 자체의 편의(롤백 등)** 을 위한 용도로만 사용해야 한다.  
+
+```java
+@Service
+public class OrderService {
+    public OrderResponse createOrder(OrderCreateRequest request, LocalDateTime registeredDateTime) {
+        List<Stock> stocks = stockRepository.findAllByProductNumberIn(stockProductNumbers);
+        for (String stockProductNumber : new HashSet<>(stockProductNumbers)) {
+            Stock stock = stockMap.get(stockProductNumber);
+            stock.deductQuantity(quantity); // quantity update
+        }
+        return OrderResponse.of(savedOrder);
+    }
+}
+```
+```java
+@Transactional
+@SpringBootTest
+@ActiveProfiles("test")
+class OrderServiceTest {
+    
+    @DisplayName("재고와 관련된 상품이 포함되어 있는 주문번호 리스트를 받아 주문을 생성한다.")
+    @Test
+    void createOrderWithStock() {
+        // given
+        // when
+        OrderResponse orderResponse = orderService.createOrder(request, registeredDateTime);
+        
+        // then
+    }
+}
+```
+
+</details>
