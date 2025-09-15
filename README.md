@@ -426,3 +426,93 @@ class OrderServiceTest {
 ```
 
 </details>
+
+<details>
+<summary><strong>강의 25. Presentation Layer 테스트</strong></summary>
+
+### MockMvc
+- 스프링 MVC 동작을 `Mock` 객체로 재현할 수 있는 테스트 프레임워크
+- 실제 서버를 띄우지 않고도 컨트롤러 계층을 테스트 가능
+- `@MockMvcTest`
+  - 컨트롤러 관련 Bean만 로드하여 테스트 수행
+  - 서비스, 리포지토리 등은 Mocking 필요
+
+### Mocking
+- 메소드를 실제 호출하지 않고, 호출 시 리턴값을 미리 지정하는 것
+- 보통 서비스 계층을 직접 실행하지 않고, **컨트롤러 단위 테스트**에서 사용
+- 서비스 단의 실제 동작 검증은 **통합 테스트**에서 진행한다고 가정
+
+```java
+    // Mock Bean 생성    
+    @MockitoBean
+    private ProductService productService;
+    
+    // productService의 getSellingProducts 메서드를 Mocking
+    List<ProductResponse> result = List.of();
+    when(productService.getSellingProducts()).thenReturn(result);
+```
+    
+- @Transactional(readOnly = true)
+  - 읽기전용 트랜잭션이 열림
+  - crud 에서 read만 작동함
+  - JPA: CUD 스냅샷 저장, 변경감지 X (성능 향상)
+  - CQRS - Command / Query 분리
+    - 장애 발생 시 범위를 줄임
+    - 서비스 분리
+    - DB endpoint 분리 가능 (read DB, write DB)
+  
+### ✅ Presentation Layer 테스트 코드
+- 주로 input의 validation이나, http status 값 등을 검증한다.
+ 
+#### 1. 필수값 검증 테스트
+- 신규 상품 등록 시 **상품 이름이 누락되었을 때** `400 BAD_REQUEST` 가 발생하는지 확인
+```java
+@DisplayName("신규 상품을 등록할 때 상품 이름은 필수값이다.")
+@Test
+void createProductWithoutName() throws Exception {
+    // given
+    ProductCreateRequest request = ProductCreateRequest.builder()
+            .type(HANDMADE)
+            .sellingStatus(SELLING)
+            .price(4000)
+            .build();
+
+    // when
+    // then
+    mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products/new")
+                    .content(objectMapper.writeValueAsString(request))
+                    .contentType(MediaType.APPLICATION_JSON)
+            )
+            .andDo(print())
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("400"))
+            .andExpect(jsonPath("$.status").value("BAD_REQUEST"))
+            .andExpect(jsonPath("$.message").value("상품 이름은 필수입니다."))
+            .andExpect(jsonPath("$.data").isEmpty())
+    ;
+}
+```
+#### 2. API 응답 검증 테스트
+- 판매 상품 조회 API 호출 시 200 OK 와 JSON 응답 구조를 검증
+```java
+@DisplayName("판매 상품을 조회한다.")
+@Test
+void getSellingProducts() throws Exception {
+    // given
+    List<ProductResponse> result = List.of();
+    when(productService.getSellingProducts()).thenReturn(result);
+
+    // when
+    // then
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products/selling"))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value("200"))
+            .andExpect(jsonPath("$.status").value("OK"))
+            .andExpect(jsonPath("$.message").value("OK"))
+            .andExpect(jsonPath("$.data").isArray())
+    ;
+}
+```
+</details>
+
