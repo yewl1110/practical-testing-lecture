@@ -24,6 +24,7 @@ public class MailService {
                             .content(content)
                             .build()
             );
+            mailSendClient.logic();
             return true;
         }
 
