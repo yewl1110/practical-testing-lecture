@@ -1124,3 +1124,168 @@ void containsStockType5(ProductType productType, boolean expected) {
 </details>
 
 ---
+
+### 8. @DynamicTest
+
+- **하나의 환경(Fixture)을 고정**해 두고 **사용자 시나리오를 순차적으로** 검증할 때 사용한다.
+- 같은 객체의 **상태 변화를 연속적으로** 점검하는 흐름 테스트(인수/시나리오)에 적합하다.
+- 시나리오 특성상 순서 의존이 생길 수 있다. 단위 테스트에서는 가급적 **독립 케이스(→ @ParameterizedTest)**를 우선하고, 상태 흐름 검증에 한해 @DynamicTest를 사용한다.
+
+<details>
+<summary>💡 코드 예시 보기</summary>
+
+```java
+
+@DisplayName("재고 차감 시나리오")
+@TestFactory
+Collection<DynamicTest> stockDeductionDynamicTest() {
+    // given
+    Stock stock = Stock.create("001", 1);
+
+    return List.of(
+            DynamicTest.dynamicTest("재고를 주어진 개수만큼 차감할 수 있다.", () -> {
+                // given
+                int quantity = 1;
+
+                // when
+                stock.deductQuantity(quantity);
+
+                // then
+                assertThat(stock.getQuantity()).isZero();
+            }),
+            DynamicTest.dynamicTest("재고보다 많은 수의 수량으로 차감 시도하는 경우 예외가 발생한다.", () -> {
+                // given
+                int quantity = 1;
+
+                // when // then
+                assertThatThrownBy(() -> stock.deductQuantity(quantity))
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("차감할 재고 수량이 없습니다.");
+            })
+    );
+}
+```
+
+</details>
+
+---
+
+### 9. 테스트 환경 통합하기
+
+- **실행 시간을 줄이려면** 테스트마다 **ApplicationContext 재시작**을 피해야 한다.
+- `@SpringBootTest`는 **프로파일 / 설정 / MockBean 구성이 조금만 달라도** 컨텍스트를 새로 띄운다.
+- `@MockBean`을 쓰면 **빈 교체**가 일어나므로 컨텍스트가 다시 올라간다.  
+  → **공통 `@MockBean`을 상위 추상 클래스**로 모으거나, **Mock 유무로 테스트 환경을 분리**하자.
+- `@DataJpaTest`는 JPA 슬라이스만 올려 **빠르지만**, 컨텍스트를 따로 띄운다.  
+  → **통합이 더 이득**이면 `@SpringBootTest`로 통합하고 **`@Transactional`**을 추가하자.
+- `@WebMvcTest`는 컨트롤러 계층만 테스트 → **별도 환경**을 구축(슬라이스)하되, 동일한 슬라이스는 **공통 베이스**로 묶자.
+
+<details>
+<summary>💡 코드 예시 보기</summary>
+
+### ❌ 통합 테스트 - 환경 통합 전
+
+```java
+
+@ActiveProfiles("test")
+@SpringBootTest
+class OrderStatisticsServiceTest {
+
+    @MockitoBean
+    protected MailSendClient mailSendClient;
+}
+
+@ActiveProfiles("test")
+@DataJpaTest
+class ProductRepositoryTest {
+
+}
+```
+
+### ✅ 통합 테스트 - 환경 통합 후
+
+- MailSendClient가 다른 테스트에서 실제 빈으로 필요하다면, 이 베이스 클래스와 환경을 분리
+
+```java
+
+class OrderStatisticsServiceTest extends IntegrationTestSupport {
+
+}
+
+class ProductRepositoryTest extends IntegrationTestSupport {
+
+}
+
+@ActiveProfiles("test")
+@SpringBootTest
+public abstract class IntegrationTestSupport {
+
+    @MockitoBean
+    protected MailSendClient mailSendClient;
+}
+```
+
+---
+
+### ❌ WebMvcTest - 환경 통합 전
+
+```java
+
+@WebMvcTest(controllers = OrderController.class)
+class OrderControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private OrderService orderService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+}
+
+@WebMvcTest(controllers = ProductController.class)
+class ProductControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockitoBean
+    private ProductService productService;
+}
+```
+
+### ✅ 통합 테스트 - 환경 통합 후
+
+```java
+class OrderControllerTest extends ControllerTestSupport {
+
+}
+
+class ProductControllerTest extends ControllerTestSupport {
+
+}
+
+@WebMvcTest(controllers = {OrderController.class, ProductController.class})
+public abstract class ControllerTestSupport {
+
+    @Autowired
+    protected MockMvc mockMvc;
+
+    @Autowired
+    protected ObjectMapper objectMapper;
+
+    @MockitoBean
+    protected OrderService orderService;
+
+    @MockitoBean
+    protected ProductService productService;
+}
+```
+
+</details>
+
+---
